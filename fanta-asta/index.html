@@ -381,31 +381,103 @@
         }
 
         /* Responsive */
+        /* Responsive */
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
             }
-
             .squad-stats {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0.3rem;
+            }
+            .budget-title {
+                font-size: 0.8rem;
+                margin-bottom: 0.2rem !important;
+            }
+            .budget-amount {
+                font-size: 1.8rem;
+            }
+            .stat-card {
+                padding: 0.3rem;
+            }
+            .stat-role {
+                font-size: 0.6rem;
+                padding: 0.1rem;
+            }
+            .stat-count {
+                font-size: 0.8rem;
             }
             
-            table, thead, tbody, th, td, tr { display: block; width: 100%; }
-            thead { display: none; }
-            tr { margin-bottom: 1rem; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1rem; border: 1px solid var(--panel-border); }
-            td { border: none !important; padding: 0.5rem 0 !important; display: flex; justify-content: space-between; align-items: center; }
-            td::before { content: attr(data-label); font-weight: bold; color: var(--text-muted); font-size: 0.8rem; }
+            .filters {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+                margin-bottom: 0.5rem;
+            }
+            .filters > * {
+                flex: 1 1 45%;
+                font-size: 0.75rem;
+                padding: 0.3rem;
+            }
+            .tier-checkboxes { 
+                flex: 1 1 100%;
+                justify-content: center;
+                gap: 0.2rem;
+            }
+            .tier-label {
+                font-size: 0.7rem;
+                padding: 0.2rem 0.4rem;
+            }
             
-            td[data-label="Giocatore"] { justify-content: flex-start; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05) !important; padding-bottom: 1rem !important; }
-            td[data-label="Giocatore"]::before { display: none; }
+            /* Tabella compatta invece delle card */
+            .table-container {
+                overflow-x: auto;
+            }
+            table {
+                font-size: 0.7rem;
+                white-space: nowrap;
+            }
+            th, td {
+                padding: 0.3rem 0.2rem;
+            }
+            .player-name {
+                font-size: 0.75rem;
+            }
+            .role-badge-small {
+                width: 16px;
+                height: 16px;
+                font-size: 9px;
+            }
+            .btn-prendi, .btn-cedi {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.6rem;
+            }
             
-            td[data-label="Azioni / Stato"] { justify-content: center; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05) !important; padding-top: 1rem !important; gap: 10px;}
-            td[data-label="Azioni / Stato"]::before { display: none; }
+            /* Nasconde le colonne extra su mobile */
+            th:nth-child(4), td:nth-child(4),
+            th:nth-child(5), td:nth-child(5),
+            th:nth-child(6), td:nth-child(6),
+            th:nth-child(7), td:nth-child(7) {
+                display: none !important;
+            }
             
-            .filters { flex-direction: column; align-items: stretch; }
-            .tier-checkboxes { flex-wrap: wrap; justify-content: center; }
+            tr {
+                cursor: pointer;
+            }
             
-            .status-bar { flex-direction: column; gap: 0.4rem; text-align: center; font-size: 0.55rem; padding: 0.5rem; justify-content: center; align-items: center; }
+            /* Status bar ultra-compatta */
+            .status-bar { 
+                flex-direction: row; 
+                gap: 1rem; 
+                justify-content: center; 
+                font-size: 0.55rem; 
+                padding: 0.3rem; 
+            }
+            #status-msg {
+                display: none;
+            }
         }
 
         .status-bar {
@@ -8581,6 +8653,42 @@
             renderPlayers();
         }
 
+        function filterPlayers() {
+            renderPlayers();
+        }
+
+        function renderBar(val) {
+            if (!val || val === '-') return '-';
+            const numVal = parseInt(val) || 0;
+            const colors = {
+                1: '#ef4444', // Red
+                2: '#f97316', // Orange
+                3: '#eab308', // Yellow
+                4: '#84cc16', // Lime
+                5: '#22c55e'  // Green
+            };
+            const color = colors[numVal] || '#4b5563';
+            const percentage = (numVal / 5) * 100;
+            return `
+            <div style="display: flex; justify-content: flex-start; align-items: center; height: 14px;">
+                <div style="
+                    width: 60px; 
+                    height: 6px; 
+                    background: rgba(255, 255, 255, 0.1); 
+                    border-radius: 3px; 
+                    overflow: hidden;
+                " title="Valore: ${numVal}/5">
+                    <div style="
+                        height: 100%; 
+                        width: ${percentage}%; 
+                        background: ${color}; 
+                        border-radius: 3px;
+                        box-shadow: 0 0 8px ${color}99;
+                    "></div>
+                </div>
+            </div>`;
+        }
+
         function renderPlayers() {
             const tbody = document.getElementById('playersTableBody');
             tbody.innerHTML = '';
@@ -8650,6 +8758,7 @@
             filtered.forEach(p => {
                 const tr = document.createElement('tr');
                 tr.className = `status-${p.status}`;
+                tr.setAttribute('onclick', `openActionModal(${p.id})`);
 
                 let actionsHtml = '';
                 if (p.status === 'available') {
@@ -8664,41 +8773,6 @@
                 } else {
                     actionsHtml = `<span style="color: var(--text-muted);">Preso da <b style="color: #fff;">${p.buyer || 'altri'}</b> a <b style="color: #fff;">${p.cost || 0}</b> cr</span> <button class="btn-annulla" onclick="revertPlayer(${p.id})" style="margin-left: 10px; padding: 0.2rem 0.5rem;">Annulla</button>`;
                 }
-
-                const renderBar = (val) => {
-                    if (!val || val === '-') return '-';
-                    const numVal = parseInt(val) || 0;
-                    
-                    // Colori più vibranti (stile Tailwind)
-                    const colors = {
-                        1: '#ef4444', // Red
-                        2: '#f97316', // Orange
-                        3: '#eab308', // Yellow
-                        4: '#84cc16', // Lime
-                        5: '#22c55e'  // Green
-                    };
-                    const color = colors[numVal] || '#4b5563';
-                    const percentage = (numVal / 5) * 100;
-                    
-                    return `
-                    <div style="display: flex; justify-content: flex-start; align-items: center; height: 100%;">
-                        <div style="
-                            width: 60px; 
-                            height: 6px; 
-                            background: rgba(255, 255, 255, 0.1); 
-                            border-radius: 3px; 
-                            overflow: hidden;
-                        " title="Valore: ${numVal}/5">
-                            <div style="
-                                height: 100%; 
-                                width: ${percentage}%; 
-                                background: ${color}; 
-                                border-radius: 3px;
-                                box-shadow: 0 0 8px ${color}99;
-                            "></div>
-                        </div>
-                    </div>`;
-                };
 
                 let tierColor = '#4b5563';
                 let tierLabel = p.tier;
@@ -8992,6 +9066,76 @@
                 console.error("Errore salvataggio su IndexedDB", e);
             }
         }
+        
+        function openActionModal(id) {
+            if (window.innerWidth > 768) return; // Solo su mobile
+            
+            const p = players.find(x => x.id === id);
+            if (!p) return;
+            
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    ${p.image ? `<img src="${p.image}" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.25));" onerror="this.style.display='none'">` : ''}
+                    <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-color);">${p.name}</h2>
+                    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem; font-weight: bold;">${p.role} - ${p.team}</div>
+                    
+                    <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">PREZZO CONSIGLIATO</div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent-color);">${p.price_str}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">TITOLARITÀ</div>
+                            ${renderBar(p.titolarita)}
+                        </div>
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">AFFIDABILITÀ</div>
+                            ${renderBar(p.affidabilita)}
+                        </div>
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">INTEGRITÀ</div>
+                            ${renderBar(p.integrita)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (p.status === 'available') {
+                html += `
+                    <div style="display: flex; gap: 1rem; flex-direction: column;">
+                        <button onclick="buyPlayer(${p.id}); closeActionModal();" style="background: var(--success); color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: bold; font-size: 1.2rem; cursor: pointer; text-transform: uppercase;">PRENDI</button>
+                        <button onclick="sellPlayer(${p.id}); closeActionModal();" style="background: var(--danger); color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: bold; font-size: 1.2rem; cursor: pointer; text-transform: uppercase;">CEDI</button>
+                    </div>
+                `;
+            } else if (p.status === 'owned') {
+                html += `
+                    <div style="text-align: center; margin-bottom: 1.5rem; background: rgba(34, 197, 94, 0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--success);">
+                        <div style="color: var(--success); font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem;">Hai acquistato questo giocatore!</div>
+                        <div style="font-size: 1.5rem; color: #fff; font-weight: bold;">${p.cost} cr</div>
+                    </div>
+                    <button onclick="revertPlayer(${p.id}); closeActionModal();" style="width: 100%; background: #4b5563; color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; text-transform: uppercase;">ANNULLA ACQUISTO</button>
+                `;
+            } else {
+                html += `
+                    <div style="text-align: center; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.05); padding: 1rem; border-radius: 8px; border: 1px solid var(--panel-border);">
+                        <div style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 0.5rem;">Preso da <b style="color: #fff;">${p.buyer || 'altri'}</b></div>
+                        <div style="font-size: 1.5rem; color: #fff; font-weight: bold;">${p.cost} cr</div>
+                    </div>
+                    <button onclick="revertPlayer(${p.id}); closeActionModal();" style="width: 100%; background: #4b5563; color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; text-transform: uppercase;">ANNULLA CESSIONE</button>
+                `;
+            }
+            
+            content.innerHTML = html;
+            modal.style.display = 'flex';
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').style.display = 'none';
+        }
+
 
         initializeApp();
     </script>
@@ -9009,11 +9153,19 @@
         </div>
     </div>
     
+    <!-- Action Modal (Mobile) -->
+    <div id="actionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 1rem;">
+        <div class="glass-panel" style="width: 100%; max-width: 400px; background: var(--panel-bg); border-radius: 16px; padding: 2rem; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            <button onclick="closeActionModal()" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; color: #fff; font-size: 2rem; cursor: pointer; line-height: 1;">&times;</button>
+            <div id="actionModalContent"></div>
+        </div>
+    </div>
+    
     <!-- Status Bar -->
     <div class="status-bar" id="statusBar">
-        <span>STATO: <b>Database pronto</b></span>
-        <span>RECORD: <b id="statusRecordCount">0</b></span>
-        <span>ULTIMO AGGIORNAMENTO: <b id="statusLastUpdate">-</b></span>
+        <span id="status-msg">STATO: <b>Pronto</b></span>
+        <span>REC: <b id="statusRecordCount">0</b></span>
+        <span>AGG: <b id="statusLastUpdate">-</b></span>
     </div>
 </body>
 
