@@ -9043,6 +9043,9 @@
         // Alias for the HTML inputs
         window.filterPlayers = renderPlayers;
 
+        // Stato Predefinito dell'Asta Ufficiale (175 giocatori)
+        const DEFAULT_AUCTION_STATE = {"1": {"status": "owned", "cost": 45, "buyer": null}, "2": {"status": "sold", "cost": 20, "buyer": "Marika"}, "3": {"status": "sold", "cost": 35, "buyer": "Martino"}, "4": {"status": "sold", "cost": 25, "buyer": "Andrea"}, "5": {"status": "sold", "cost": 19, "buyer": "Daiana"}, "6": {"status": "sold", "cost": 30, "buyer": "Andrea"}, "7": {"status": "sold", "cost": 4, "buyer": "Martino"}, "8": {"status": "sold", "cost": 16, "buyer": "Lisa"}, "9": {"status": "sold", "cost": 7, "buyer": "Marika"}, "10": {"status": "sold", "cost": 9, "buyer": "Andrea"}, "11": {"status": "sold", "cost": 8, "buyer": "Lisa"}, "13": {"status": "sold", "cost": 8, "buyer": "Emanuele"}, "15": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "16": {"status": "sold", "cost": 1, "buyer": "Lisa"}, "17": {"status": "sold", "cost": 16, "buyer": "Daiana"}, "22": {"status": "sold", "cost": 1, "buyer": "Daiana"}, "24": {"status": "owned", "cost": 1}, "27": {"status": "sold", "cost": 6, "buyer": "Martino"}, "30": {"status": "sold", "cost": 1, "buyer": "Marika"}, "54": {"status": "owned", "cost": 1}, "60": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "75": {"status": "sold", "cost": 51, "buyer": "Marika"}, "76": {"status": "sold", "cost": 42, "buyer": "Andrea"}, "77": {"status": "sold", "cost": 13, "buyer": "Emanuele"}, "78": {"status": "sold", "cost": 40, "buyer": "Andrea"}, "79": {"status": "sold", "cost": 31, "buyer": "Daiana"}, "80": {"status": "sold", "cost": 10, "buyer": "Marika"}, "81": {"status": "sold", "cost": 14, "buyer": "Martino"}, "82": {"status": "sold", "cost": 38, "buyer": "Martino"}, "83": {"status": "sold", "cost": 15, "buyer": "Andrea"}, "84": {"status": "sold", "cost": 14, "buyer": "Daiana"}, "85": {"status": "sold", "cost": 15, "buyer": "Andrea"}, "86": {"status": "sold", "cost": 21, "buyer": "Lisa"}, "87": {"status": "owned", "cost": 22}, "88": {"status": "sold", "cost": 21, "buyer": "Martino"}, "89": {"status": "sold", "cost": 5, "buyer": "Lisa"}, "90": {"status": "sold", "cost": 31, "buyer": "Lisa"}, "91": {"status": "sold", "cost": 11, "buyer": "Martino"}, "92": {"status": "sold", "cost": 2, "buyer": "Andrea"}, "93": {"status": "sold", "cost": 10, "buyer": "Andrea"}, "94": {"status": "sold", "cost": 15, "buyer": "Marika"}, "95": {"status": "sold", "cost": 10, "buyer": "Daiana"}, "96": {"status": "sold", "cost": 12, "buyer": "Lisa"}, "97": {"status": "sold", "cost": 3, "buyer": "Emanuele"}, "98": {"status": "sold", "cost": 3, "buyer": "Lisa"}, "99": {"status": "owned", "cost": 2}, "100": {"status": "sold", "cost": 15, "buyer": "Marika"}, "101": {"status": "sold", "cost": 9, "buyer": "Lisa"}, "102": {"status": "sold", "cost": 9, "buyer": "Daiana"}, "104": {"status": "owned", "cost": 1}, "105": {"status": "sold", "cost": 3, "buyer": "Emanuele"}, "106": {"status": "sold", "cost": 1, "buyer": "Lisa"}, "108": {"status": "owned", "cost": 1}, "110": {"status": "sold", "cost": 6, "buyer": "Emanuele"}, "111": {"status": "sold", "cost": 5, "buyer": "Emanuele"}, "112": {"status": "sold", "cost": 15, "buyer": "Daiana"}, "115": {"status": "sold", "cost": 5, "buyer": "Emanuele"}, "116": {"status": "sold", "cost": 9, "buyer": "Daiana"}, "121": {"status": "sold", "cost": 6, "buyer": "Daiana"}, "125": {"status": "owned", "cost": 2}, "128": {"status": "owned", "cost": 1}, "129": {"status": "owned", "cost": 1}, "130": {"status": "sold", "cost": 7, "buyer": "Marika"}, "138": {"status": "sold", "cost": 7, "buyer": "Martino"}, "139": {"status": "owned", "cost": 1}, "141": {"status": "sold", "cost": 7, "buyer": "Marika"}, "143": {"status": "sold", "cost": 5, "buyer": "Martino"}, "148": {"status": "sold", "cost": 7, "buyer": "Lisa"}, "149": {"status": "sold", "cost": 9, "buyer": "Daiana"}, "152": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "154": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "157": {"status": "sold", "cost": 6, "buyer": "Andrea"}, "167": {"status": "sold", "cost": 1, "buyer": "Marika"}, "173": {"status": "sold", "cost": 1, "buyer": "Andrea"}, "194": {"status": "sold", "cost": 1, "buyer": "Martino"}, "221": {"status": "sold", "cost": 4, "buyer": "Martino"}, "227": {"status": "sold", "cost": 1, "buyer": "Marika"}, "285": {"status": "sold", "cost": 83, "buyer": "Daiana"}, "286": {"status": "sold", "cost": 80, "buyer": "Emanuele"}, "287": {"status": "sold", "cost": 17, "buyer": "Emanuele"}, "288": {"status": "sold", "cost": 20, "buyer": "Daiana"}, "289": {"status": "sold", "cost": 20, "buyer": "Lisa"}, "290": {"status": "sold", "cost": 31, "buyer": "Andrea"}, "291": {"status": "owned", "cost": 43}, "292": {"status": "owned", "cost": 21}, "293": {"status": "sold", "cost": 15, "buyer": "Lisa"}, "294": {"status": "sold", "cost": 26, "buyer": "Martino"}, "295": {"status": "sold", "cost": 3, "buyer": "Martino"}, "296": {"status": "sold", "cost": 6, "buyer": "Martino"}, "297": {"status": "sold", "cost": 32, "buyer": "Marika"}, "298": {"status": "sold", "cost": 10, "buyer": "Lisa"}, "299": {"status": "sold", "cost": 20, "buyer": "Emanuele"}, "300": {"status": "sold", "cost": 15, "buyer": "Marika"}, "301": {"status": "sold", "cost": 1, "buyer": "Martino"}, "302": {"status": "sold", "cost": 3, "buyer": "Lisa"}, "303": {"status": "owned", "cost": 3}, "304": {"status": "owned", "cost": 3}, "306": {"status": "sold", "cost": 40, "buyer": "Andrea"}, "307": {"status": "sold", "cost": 1, "buyer": "Andrea"}, "308": {"status": "owned", "cost": 9}, "309": {"status": "sold", "cost": 1, "buyer": "Martino"}, "311": {"status": "sold", "cost": 1, "buyer": "Lisa"}, "318": {"status": "sold", "cost": 10, "buyer": "Andrea"}, "319": {"status": "sold", "cost": 6, "buyer": "Martino"}, "320": {"status": "owned", "cost": 5}, "321": {"status": "sold", "cost": 5, "buyer": "Andrea"}, "322": {"status": "sold", "cost": 35, "buyer": "Marika"}, "323": {"status": "sold", "cost": 1, "buyer": "Marika"}, "325": {"status": "sold", "cost": 13, "buyer": "Lisa"}, "326": {"status": "sold", "cost": 8, "buyer": "Daiana"}, "327": {"status": "sold", "cost": 5, "buyer": "Daiana"}, "328": {"status": "sold", "cost": 10, "buyer": "Daiana"}, "329": {"status": "sold", "cost": 8, "buyer": "Martino"}, "331": {"status": "sold", "cost": 1, "buyer": "Daiana"}, "333": {"status": "sold", "cost": 1, "buyer": "Marika"}, "334": {"status": "sold", "cost": 4, "buyer": "Martino"}, "335": {"status": "sold", "cost": 5, "buyer": "Marika"}, "339": {"status": "sold", "cost": 3, "buyer": "Lisa"}, "344": {"status": "sold", "cost": 1, "buyer": "Andrea"}, "345": {"status": "sold", "cost": 2, "buyer": "Andrea"}, "350": {"status": "owned", "cost": 4}, "352": {"status": "sold", "cost": 3, "buyer": "Marika"}, "353": {"status": "sold", "cost": 1, "buyer": "Marika"}, "354": {"status": "sold", "cost": 4, "buyer": "Emanuele"}, "362": {"status": "owned", "cost": 4}, "372": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "382": {"status": "sold", "cost": 1, "buyer": "Daiana"}, "384": {"status": "sold", "cost": 3, "buyer": "Emanuele"}, "387": {"status": "sold", "cost": 1, "buyer": "Lisa"}, "390": {"status": "sold", "cost": 3, "buyer": "Daiana"}, "396": {"status": "sold", "cost": 1, "buyer": "Andrea"}, "403": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "448": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "487": {"status": "owned", "cost": 225}, "488": {"status": "sold", "cost": 198, "buyer": "Lisa"}, "489": {"status": "sold", "cost": 71, "buyer": "Emanuele"}, "490": {"status": "sold", "cost": 206, "buyer": "Emanuele"}, "491": {"status": "owned", "cost": 85}, "492": {"status": "sold", "cost": 90, "buyer": "Andrea"}, "493": {"status": "sold", "cost": 39, "buyer": "Martino"}, "494": {"status": "sold", "cost": 20, "buyer": "Andrea"}, "495": {"status": "sold", "cost": 140, "buyer": "Marika"}, "496": {"status": "sold", "cost": 25, "buyer": "Marika"}, "497": {"status": "sold", "cost": 25, "buyer": "Marika"}, "498": {"status": "sold", "cost": 20, "buyer": "Martino"}, "499": {"status": "sold", "cost": 32, "buyer": "Daiana"}, "500": {"status": "sold", "cost": 36, "buyer": "Emanuele"}, "502": {"status": "sold", "cost": 26, "buyer": "Martino"}, "503": {"status": "sold", "cost": 10, "buyer": "Andrea"}, "504": {"status": "sold", "cost": 20, "buyer": "Andrea"}, "505": {"status": "sold", "cost": 2, "buyer": "Lisa"}, "506": {"status": "sold", "cost": 11, "buyer": "Martino"}, "507": {"status": "sold", "cost": 8, "buyer": "Martino"}, "508": {"status": "sold", "cost": 40, "buyer": "Lisa"}, "509": {"status": "sold", "cost": 2, "buyer": "Andrea"}, "511": {"status": "sold", "cost": 50, "buyer": "Andrea"}, "512": {"status": "sold", "cost": 3, "buyer": "Emanuele"}, "514": {"status": "sold", "cost": 25, "buyer": "Daiana"}, "516": {"status": "sold", "cost": 46, "buyer": "Daiana"}, "517": {"status": "sold", "cost": 1, "buyer": "Lisa"}, "518": {"status": "owned", "cost": 1}, "519": {"status": "sold", "cost": 8, "buyer": "Daiana"}, "520": {"status": "owned", "cost": 1}, "524": {"status": "sold", "cost": 3, "buyer": "Lisa"}, "525": {"status": "sold", "cost": 10, "buyer": "Marika"}, "526": {"status": "sold", "cost": 4, "buyer": "Marika"}, "529": {"status": "owned", "cost": 1}, "530": {"status": "sold", "cost": 3, "buyer": "Daiana"}, "537": {"status": "sold", "cost": 1, "buyer": "Emanuele"}, "539": {"status": "sold", "cost": 15, "buyer": "Martino"}, "541": {"status": "sold", "cost": 1, "buyer": "Marika"}, "546": {"status": "owned", "cost": 1}, "551": {"status": "sold", "cost": 5, "buyer": "Daiana"}, "553": {"status": "sold", "cost": 1, "buyer": "Lisa"}, "561": {"status": "sold", "cost": 1, "buyer": "Emanuele"}};
+
         // Inizializza con IndexedDB
         const DB_NAME = 'FantaAstaDB';
         const DB_VERSION = 1;
@@ -9069,7 +9072,24 @@
                 const request = tx.objectStore(STORE_NAME).get('currentState');
 
                 request.onsuccess = () => {
-                    const savedState = request.result || {};
+                    let savedState = request.result;
+                    // Se non ci sono dati salvati nel browser locale, usa il default dell'asta ufficiale
+                    if (!savedState || (Object.keys(savedState).length === 0 && !savedState.__cleared)) {
+                        savedState = DEFAULT_AUCTION_STATE;
+                        // Salva nel db locale così rimane persistito
+                        try {
+                            const writeTx = db.transaction(STORE_NAME, 'readwrite');
+                            writeTx.objectStore(STORE_NAME).put(DEFAULT_AUCTION_STATE, 'currentState');
+                            localStorage.setItem('fantaAstaLastUpdate', Date.now());
+                        } catch (e) {}
+                    }
+                    if (savedState.__cleared) {
+                        savedState = {};
+                    }
+
+                    budget = 500;
+                    squad = { P: 0, D: 0, C: 0, A: 0 };
+
                     players.forEach(p => {
                         if (savedState[p.id]) {
                             p.status = savedState[p.id].status;
@@ -9204,9 +9224,50 @@
             return new Promise((resolve, reject) => {
                 const tx = db.transaction(STORE_NAME, 'readonly');
                 const req = tx.objectStore(STORE_NAME).get('currentState');
-                req.onsuccess = () => resolve(req.result || {});
+                req.onsuccess = () => {
+                    let res = req.result;
+                    if (!res || (Object.keys(res).length === 0 && !res.__cleared)) {
+                        res = DEFAULT_AUCTION_STATE;
+                    }
+                    if (res.__cleared) res = {};
+                    resolve(res);
+                };
                 req.onerror = () => reject(req.error);
             });
+        }
+
+        async function restoreDefaultAuction() {
+            if (!confirm("Vuoi ripristinare i dati dell'asta ufficiale (175 giocatori assegnati)? Tutti i dati correnti sul dispositivo verranno sovrascritti.")) {
+                return;
+            }
+            try {
+                const db = await initDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).put(DEFAULT_AUCTION_STATE, 'currentState');
+                tx.oncomplete = () => {
+                    localStorage.setItem('fantaAstaLastUpdate', Date.now());
+                    window.location.reload();
+                };
+            } catch (err) {
+                alert("Errore ripristino default: " + err.message);
+            }
+        }
+
+        async function resetAuctionEmpty() {
+            if (!confirm("ATTENZIONE: Vuoi davvero svuotare completamente il database e azzerare tutti i giocatori e crediti?")) {
+                return;
+            }
+            try {
+                const db = await initDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).put({ __cleared: true }, 'currentState');
+                tx.oncomplete = () => {
+                    localStorage.setItem('fantaAstaLastUpdate', Date.now());
+                    window.location.reload();
+                };
+            } catch (err) {
+                alert("Errore reset: " + err.message);
+            }
         }
 
         async function openBackupModal() {
@@ -9761,6 +9822,26 @@
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;">
                 <h2 style="margin: 0; font-size: 1.4rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">💾 Gestione Database & Backup</h2>
                 <button onclick="closeBackupModal()" style="background: transparent; border: none; color: #fff; font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Default State Banner & Quick Actions -->
+            <div style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 10px; padding: 1.2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
+                <div>
+                    <div style="font-weight: bold; color: #c4b5fd; font-size: 1.05rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <span>⭐</span> Default Attivo: Asta Ufficiale
+                    </div>
+                    <div style="color: #cbd5e1; font-size: 0.85rem; margin-top: 0.2rem;">
+                        Chiunque accede vede per default l'asta con tutti i 175 giocatori assegnati alle rispettive squadre.
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                    <button onclick="restoreDefaultAuction()" style="background: #8b5cf6; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;">
+                        🔄 Ripristina Default Asta
+                    </button>
+                    <button onclick="resetAuctionEmpty()" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 0.6rem 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                        🗑️ Svuota Asta
+                    </button>
+                </div>
             </div>
 
             <!-- Export Section -->
