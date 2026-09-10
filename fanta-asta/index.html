@@ -9591,15 +9591,37 @@
 
             teamList.sort((a, b) => b.best11Score - a.best11Score || b.goals - a.goals);
 
-            const badges = {
-                "Marika": { icon: "🔥", text: "Macchina da Gol (Top Form)", color: "#ef4444" },
-                "Omar": { icon: "🛡️", text: "Fortino Inviolato + Malen On Fire", color: "#38bdf8" },
-                "Andrea": { icon: "🎯", text: "Fabbrica di Assist & Difesa Solida", color: "#10b981" },
-                "Martino": { icon: "💰", text: "Cassaforte Record (180 CR in cassa)", color: "#a855f7" },
-                "Emanuele": { icon: "⏳", text: "In attesa dei bomber da 277 CR", color: "#f59e0b" },
-                "Daiana": { icon: "⚙️", text: "In Rodaggio (Nico Paz faro)", color: "#64748b" },
-                "Lisa": { icon: "🚨", text: "Allarme Rosso (Attacco a secco)", color: "#dc2626" }
-            };
+            // Dynamically calculate KPIs
+            const maxGoals = Math.max(...teamList.map(t => t.goals));
+            const topGoalTeams = teamList.filter(t => t.goals === maxGoals).map(t => t.name).join(' & ') || '-';
+
+            const minGkGs = Math.min(...teamList.map(t => t.gkConceded));
+            const bestGkTeams = teamList.filter(t => t.gkConceded === minGkGs).map(t => t.name).join(' & ') || '-';
+
+            const maxAssists = Math.max(...teamList.map(t => t.assists));
+            const topAssistTeams = teamList.filter(t => t.assists === maxAssists).map(t => t.name).join(' & ') || '-';
+
+            const topScorer = assigned.slice().sort((a, b) => ((b.stats && b.stats.gf) || 0) - ((a.stats && a.stats.gf) || 0))[0];
+            const topScorerBuyer = topScorer ? (topScorer.status === 'owned' ? 'Omar' : (topScorer.buyer || 'Altro')) : '-';
+            const topScorerGoals = (topScorer && topScorer.stats) ? topScorer.stats.gf : 0;
+            const topScorerName = topScorer ? topScorer.name : '-';
+
+            const badges = {};
+            teamList.forEach(t => {
+                if (t.goals === maxGoals) {
+                    badges[t.name] = { icon: "🔥", text: `Macchina da Gol (${t.goals} gol)`, color: "#ef4444" };
+                } else if (t.gkConceded === minGkGs) {
+                    badges[t.name] = { icon: "🛡️", text: `Muro Insuperabile (${t.gkConceded} ${t.gkConceded === 1 ? 'subito' : 'subiti'})`, color: "#38bdf8" };
+                } else if (t.assists === maxAssists) {
+                    badges[t.name] = { icon: "🎯", text: `Fabbrica di Assist (${t.assists} assist)`, color: "#10b981" };
+                } else if (500 - t.spent >= 100) {
+                    badges[t.name] = { icon: "💰", text: `Cassaforte Record (${500 - t.spent} CR in cassa)`, color: "#a855f7" };
+                } else if (t.goals <= 4) {
+                    badges[t.name] = { icon: "⚡", text: `In Ripresa (${t.goals} gol)`, color: "#f59e0b" };
+                } else {
+                    badges[t.name] = { icon: "⚙️", text: `In Rodaggio (${t.goals} gol)`, color: "#64748b" };
+                }
+            });
 
             let html = `
                 <!-- Intro Banner -->
@@ -9623,19 +9645,19 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                     <div class="glass-panel" style="padding: 1rem; text-align: center; border-color: rgba(239, 68, 68, 0.3);">
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">⚽ Più Gol Segnati</div>
-                        <div style="font-size: 1.6rem; font-weight: 800; color: #f87171; margin-top: 0.2rem;">Marika <span style="font-size: 0.9rem; color: #fff;">(13)</span></div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #f87171; margin-top: 0.2rem;">${topGoalTeams} <span style="font-size: 0.9rem; color: #fff;">(${maxGoals})</span></div>
                     </div>
                     <div class="glass-panel" style="padding: 1rem; text-align: center; border-color: rgba(16, 185, 129, 0.3);">
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">🧤 Miglior Difesa Portieri</div>
-                        <div style="font-size: 1.6rem; font-weight: 800; color: #34d399; margin-top: 0.2rem;">Omar <span style="font-size: 0.9rem; color: #fff;">(0 subiti!)</span></div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #34d399; margin-top: 0.2rem;">${bestGkTeams} <span style="font-size: 0.9rem; color: #fff;">(${minGkGs} ${minGkGs === 1 ? 'subito' : 'subiti'})</span></div>
                     </div>
                     <div class="glass-panel" style="padding: 1rem; text-align: center; border-color: rgba(139, 92, 246, 0.3);">
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">👟 Re degli Assist</div>
-                        <div style="font-size: 1.6rem; font-weight: 800; color: #a78bfa; margin-top: 0.2rem;">Andrea <span style="font-size: 0.9rem; color: #fff;">(7)</span></div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #a78bfa; margin-top: 0.2rem;">${topAssistTeams} <span style="font-size: 0.9rem; color: #fff;">(${maxAssists})</span></div>
                     </div>
                     <div class="glass-panel" style="padding: 1rem; text-align: center; border-color: rgba(56, 189, 248, 0.3);">
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">👑 Capocannoniere Assoluto</div>
-                        <div style="font-size: 1.3rem; font-weight: 800; color: #38bdf8; margin-top: 0.3rem;">Malen (Omar) <span style="font-size: 0.85rem; color: #fff;">5 ⚽</span></div>
+                        <div style="font-size: 1.2rem; font-weight: 800; color: #38bdf8; margin-top: 0.3rem;">${topScorerName} (${topScorerBuyer}) <span style="font-size: 0.85rem; color: #fff;">${topScorerGoals} ⚽</span></div>
                     </div>
                 </div>
 
