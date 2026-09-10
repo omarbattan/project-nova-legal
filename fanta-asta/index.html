@@ -549,6 +549,7 @@
             font-weight: 600;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -9101,8 +9102,14 @@
                     budget = 500;
                     squad = { P: 0, D: 0, C: 0, A: 0 };
 
+                    let activeStatsSource = SERIE_A_STATS;
+                    try {
+                        const savedOverride = localStorage.getItem('fantaAstaStatsOverride');
+                        if (savedOverride) activeStatsSource = JSON.parse(savedOverride);
+                    } catch (e) {}
+
                     players.forEach(p => {
-                        p.stats = SERIE_A_STATS[p.id] || { pv: 0, mv: 0, fm: 0, gf: 0, gs: 0, ass: 0 };
+                        p.stats = activeStatsSource[p.id] || { pv: 0, mv: 0, fm: 0, gf: 0, gs: 0, ass: 0 };
                         if (savedState[p.id]) {
                             p.status = savedState[p.id].status;
                             p.cost = savedState[p.id].cost || 0;
@@ -10091,7 +10098,99 @@
             switchStatsTab(currentStatsTab);
         }
 
-                function exportStatsCSV() {
+                        function handleStatsExcelUpload(event) {
+            const file = event.target.files[0];
+            const fb = document.getElementById('statsExcelUploadFeedback');
+            if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+                fb.innerText = "❌ Libreria XLSX non ancora caricata. Riprova tra un istante.";
+                fb.style.color = "#ef4444";
+                fb.style.display = "block";
+                return;
+            }
+
+            fb.innerText = "⏳ Elaborazione file Excel in corso...";
+            fb.style.color = "#38bdf8";
+            fb.style.display = "block";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    let headerIdx = -1;
+                    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                        if (rows[i] && rows[i].some(c => typeof c === 'string' && (c.toLowerCase() === 'nome' || c.toLowerCase() === 'id'))) {
+                            headerIdx = i;
+                            break;
+                        }
+                    }
+
+                    if (headerIdx === -1) {
+                        throw new Error("Formato Excel non valido (colonna 'Nome' non trovata).");
+                    }
+
+                    const headers = rows[headerIdx].map(c => (c || '').toString().toLowerCase().trim());
+                    const nameCol = headers.indexOf('nome');
+                    const pvCol = headers.indexOf('pv');
+                    const mvCol = headers.indexOf('mv');
+                    const fmCol = headers.indexOf('fm');
+                    const gfCol = headers.indexOf('gf');
+                    const gsCol = headers.indexOf('gs');
+                    const assCol = headers.indexOf('ass');
+
+                    const statsByName = {};
+                    for (let i = headerIdx + 1; i < rows.length; i++) {
+                        const r = rows[i];
+                        if (!r || !r[nameCol]) continue;
+                        const name = r[nameCol].toString().trim().toLowerCase();
+                        statsByName[name] = {
+                            pv: parseInt(r[pvCol]) || 0,
+                            mv: parseFloat(r[mvCol]) || 0.0,
+                            fm: parseFloat(r[fmCol]) || 0.0,
+                            gf: parseInt(r[gfCol]) || 0,
+                            gs: parseInt(r[gsCol]) || 0,
+                            ass: parseInt(r[assCol]) || 0
+                        };
+                    }
+
+                    const newStatsMap = {};
+                    let matched = 0;
+                    players.forEach(p => {
+                        const pname = p.name.trim().toLowerCase();
+                        if (statsByName[pname]) {
+                            newStatsMap[p.id] = statsByName[pname];
+                            matched++;
+                        } else {
+                            newStatsMap[p.id] = { pv: 0, mv: 0, fm: 0, gf: 0, gs: 0, ass: 0 };
+                        }
+                    });
+
+                    localStorage.setItem('fantaAstaStatsOverride', JSON.stringify(newStatsMap));
+                    fb.innerText = `✅ Statistiche aggiornate (${matched} giocatori associati)! Ricaricamento...`;
+                    fb.style.color = "#10b981";
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } catch (err) {
+                    fb.innerText = "❌ Errore lettura Excel: " + err.message;
+                    fb.style.color = "#ef4444";
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function resetToDefaultStats() {
+            if (!confirm("Vuoi reimpostare le statistiche ufficiali predefinite?")) return;
+            localStorage.removeItem('fantaAstaStatsOverride');
+            window.location.reload();
+        }
+
+        function exportStatsCSV() {
             const assigned = players.filter(p => p.status !== 'available');
             if (assigned.length === 0) {
                 alert("Nessun giocatore da esportare.");
@@ -10233,6 +10332,23 @@
                         🗑️ Svuota Asta
                     </button>
                 </div>
+            </div>
+
+            <!-- Upload New Matchday Stats Excel -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 1.2rem;">
+                <div style="font-weight: bold; color: #34d399; font-size: 1.05rem; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>📥</span> Aggiorna Statistiche Serie A da File Excel (.xlsx)
+                </div>
+                <div style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 0.8rem;">
+                    Scarica ogni settimana il file ufficiale da Fantacalcio.it (sezione <i>Statistiche Serie A</i>) e caricalo qui: aggiornerà all'istante il Power Ranking, i gol e le fantamedie direttamente dal tuo browser!
+                </div>
+                <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
+                    <input type="file" id="statsExcelInput" accept=".xlsx" onchange="handleStatsExcelUpload(event)" style="font-size: 0.85rem; color: var(--text-muted); background: rgba(0,0,0,0.3); border-radius: 6px; padding: 0.4rem; flex-grow: 1; min-width: 240px;">
+                    <button onclick="resetToDefaultStats()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 0.5rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">
+                        Reimposta Predefiniti
+                    </button>
+                </div>
+                <div id="statsExcelUploadFeedback" style="display: none; font-size: 0.85rem; font-weight: bold; margin-top: 0.5rem;"></div>
             </div>
 
             <!-- Export Section -->
