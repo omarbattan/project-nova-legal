@@ -584,8 +584,14 @@
 
         <div class="filters">
             <button onclick="openRecapModal()" class="btn-prendi"
-                style="background: var(--accent-color); padding: 0.5rem 1rem; font-weight: bold; border-radius: 6px; border: none; color: white; cursor: pointer; transition: 0.2s;">📊
+                style="background: #8b5cf6; padding: 0.5rem 1rem; font-weight: bold; border-radius: 6px; border: none; color: white; cursor: pointer; transition: 0.2s;">📊
                 Recap Squadre</button>
+            <button onclick="openStatsModal()" class="btn-prendi"
+                style="background: #10b981; padding: 0.5rem 1rem; font-weight: bold; border-radius: 6px; border: none; color: white; cursor: pointer; transition: 0.2s;">📈
+                Statistiche Asta</button>
+            <button onclick="openBackupModal()" class="btn-prendi"
+                style="background: #0284c7; padding: 0.5rem 1rem; font-weight: bold; border-radius: 6px; border: none; color: white; cursor: pointer; transition: 0.2s;">💾
+                Backup / Esporta DB</button>
             <input type="text" id="searchInput" placeholder="Cerca giocatore..." onkeyup="filterPlayers()">
             <select id="roleFilter" onchange="filterPlayers()">
                 <option value="ALL">Tutti i Ruoli</option>
@@ -9192,6 +9198,521 @@
             document.getElementById('actionModal').style.display = 'none';
         }
 
+        // --- BACKUP & EXPORT/IMPORT LOGIC ---
+        async function getSavedStateFromDB() {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const req = tx.objectStore(STORE_NAME).get('currentState');
+                req.onsuccess = () => resolve(req.result || {});
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function openBackupModal() {
+            const modal = document.getElementById('backupModal');
+            try {
+                const state = await getSavedStateFromDB();
+                const assignedCount = Object.keys(state).length;
+                document.getElementById('backupCountInfo').innerHTML =
+                    `Nel database sono registrati <b>${assignedCount}</b> giocatori con stato/prezzo/acquirente.`;
+
+                const exportPayload = {
+                    app: "FantaAsta",
+                    version: 1,
+                    exportedAt: new Date().toISOString(),
+                    assignedCount: assignedCount,
+                    state: state
+                };
+
+                const jsonStr = JSON.stringify(exportPayload, null, 2);
+                document.getElementById('exportJsonTextarea').value = jsonStr;
+                document.getElementById('importJsonTextarea').value = '';
+                document.getElementById('backupCopyFeedback').style.display = 'none';
+                document.getElementById('backupImportFeedback').style.display = 'none';
+            } catch (err) {
+                console.error("Errore lettura DB per export", err);
+                document.getElementById('backupCountInfo').innerText = "Errore nel caricamento del database locale.";
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeBackupModal() {
+            document.getElementById('backupModal').style.display = 'none';
+        }
+
+        function downloadBackupJson() {
+            const jsonStr = document.getElementById('exportJsonTextarea').value;
+            if (!jsonStr) return;
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `fanta_asta_backup_${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        async function copyBackupJson() {
+            const jsonStr = document.getElementById('exportJsonTextarea').value;
+            const fb = document.getElementById('backupCopyFeedback');
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(jsonStr);
+                } else {
+                    const textarea = document.getElementById('exportJsonTextarea');
+                    textarea.focus();
+                    textarea.select();
+                    document.execCommand('copy');
+                }
+                fb.innerText = '✅ Copiato negli appunti!';
+                fb.style.display = 'inline-block';
+                setTimeout(() => { fb.style.display = 'none'; }, 3000);
+            } catch (err) {
+                const textarea = document.getElementById('exportJsonTextarea');
+                textarea.focus();
+                textarea.select();
+                fb.innerText = '⚠️ Selezionato! Premi Cmd+C / Copia';
+                fb.style.display = 'inline-block';
+            }
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('importJsonTextarea').value = e.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        async function applyImportData() {
+            const raw = document.getElementById('importJsonTextarea').value.trim();
+            const fb = document.getElementById('backupImportFeedback');
+            if (!raw) {
+                fb.innerText = '❌ Inserisci o seleziona un file JSON valido.';
+                fb.style.color = '#ef4444';
+                fb.style.display = 'block';
+                return;
+            }
+
+            try {
+                let parsed = JSON.parse(raw);
+                let newState = parsed.state ? parsed.state : parsed;
+
+                if (typeof newState !== 'object' || Array.isArray(newState)) {
+                    throw new Error("Formato dati non conforme.");
+                }
+
+                const count = Object.keys(newState).length;
+                if (!confirm(`Sei sicuro di voler importare ${count} giocatori? Il database locale verrà aggiornato con questi dati.`)) {
+                    return;
+                }
+
+                const db = await initDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).put(newState, 'currentState');
+
+                tx.oncomplete = () => {
+                    localStorage.setItem('fantaAstaLastUpdate', Date.now());
+                    fb.innerText = '✅ Database ripristinato con successo! Ricaricamento in corso...';
+                    fb.style.color = '#10b981';
+                    fb.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 800);
+                };
+            } catch (e) {
+                fb.innerText = '❌ Errore durante l\'importazione: ' + e.message;
+                fb.style.color = '#ef4444';
+                fb.style.display = 'block';
+            }
+        }
+
+        // --- STATISTICHE AVANZATE ---
+        function openStatsModal() {
+            const modal = document.getElementById('statsModal');
+            renderStats();
+            modal.style.display = 'flex';
+        }
+
+        function closeStatsModal() {
+            document.getElementById('statsModal').style.display = 'none';
+        }
+
+        function renderStats() {
+            const container = document.getElementById('statsContent');
+            const assigned = players.filter(p => p.status !== 'available');
+
+            if (assigned.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                        <h3 style="color: #fff; margin-bottom: 0.5rem;">Nessun dato registrato nell'asta</h3>
+                        <p>Assegna dei giocatori o importa un backup per vedere le statistiche complete.</p>
+                    </div>`;
+                return;
+            }
+
+            // Teams data
+            const teams = {};
+            let totalSpent = 0;
+            const roleSpent = { P: 0, D: 0, C: 0, A: 0 };
+            const roleCount = { P: 0, D: 0, C: 0, A: 0 };
+
+            assigned.forEach(p => {
+                const tName = p.status === 'owned' ? 'La Mia Squadra' : (p.buyer || 'Sconosciuto');
+                if (!teams[tName]) {
+                    teams[tName] = {
+                        name: tName,
+                        spent: 0,
+                        count: 0,
+                        roles: { P: 0, D: 0, C: 0, A: 0 },
+                        rolesSpent: { P: 0, D: 0, C: 0, A: 0 },
+                        titTotal: 0,
+                        affTotal: 0,
+                        intTotal: 0,
+                        players: []
+                    };
+                }
+                const cost = p.cost || 0;
+                teams[tName].spent += cost;
+                teams[tName].count++;
+                teams[tName].roles[p.role] = (teams[tName].roles[p.role] || 0) + 1;
+                teams[tName].rolesSpent[p.role] = (teams[tName].rolesSpent[p.role] || 0) + cost;
+                teams[tName].titTotal += (p.titolarita || 0);
+                teams[tName].affTotal += (p.affidabilita || 0);
+                teams[tName].intTotal += (p.integrita || 0);
+                teams[tName].players.push(p);
+
+                totalSpent += cost;
+                roleSpent[p.role] = (roleSpent[p.role] || 0) + cost;
+                roleCount[p.role] = (roleCount[p.role] || 0) + 1;
+            });
+
+            const teamList = Object.values(teams);
+            const teamCount = teamList.length;
+            const totalBudgetAvailable = teamCount * 500;
+            const avgCostPerPlayer = (totalSpent / assigned.length).toFixed(1);
+
+            const sortedByCost = assigned.slice().sort((a, b) => (b.cost || 0) - (a.cost || 0));
+            const topPlayer = sortedByCost[0];
+
+            // Role breakdown percentages
+            const pctP = totalSpent ? ((roleSpent.P / totalSpent) * 100).toFixed(1) : 0;
+            const pctD = totalSpent ? ((roleSpent.D / totalSpent) * 100).toFixed(1) : 0;
+            const pctC = totalSpent ? ((roleSpent.C / totalSpent) * 100).toFixed(1) : 0;
+            const pctA = totalSpent ? ((roleSpent.A / totalSpent) * 100).toFixed(1) : 0;
+
+            // Bargains & Overpays
+            const bargains = assigned
+                .map(p => {
+                    const rec = parseInt(p.price_str) || 0;
+                    return { ...p, diff: rec - (p.cost || 0), rec };
+                })
+                .filter(p => p.diff > 0 && p.cost > 0)
+                .sort((a, b) => b.diff - a.diff)
+                .slice(0, 8);
+
+            const overpays = assigned
+                .map(p => {
+                    const rec = parseInt(p.price_str) || 0;
+                    return { ...p, diff: (p.cost || 0) - rec, rec };
+                })
+                .filter(p => p.diff > 0)
+                .sort((a, b) => b.diff - a.diff)
+                .slice(0, 8);
+
+            // HTML generation
+            let html = `
+                <!-- KPI CARDS -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="glass-panel" style="text-align: center; padding: 1rem; border-color: rgba(56, 189, 248, 0.3);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Totale Speso Lega</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #38bdf8; margin-top: 0.2rem;">${totalSpent} <span style="font-size: 0.9rem; color: var(--text-muted);">/ ${totalBudgetAvailable}</span></div>
+                    </div>
+                    <div class="glass-panel" style="text-align: center; padding: 1rem; border-color: rgba(16, 185, 129, 0.3);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Giocatori Chiamati</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 0.2rem;">${assigned.length}</div>
+                    </div>
+                    <div class="glass-panel" style="text-align: center; padding: 1rem; border-color: rgba(139, 92, 246, 0.3);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Costo Medio Cartellino</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #a78bfa; margin-top: 0.2rem;">${avgCostPerPlayer} <span style="font-size: 0.8rem; color: var(--text-muted);">CR</span></div>
+                    </div>
+                    <div class="glass-panel" style="text-align: center; padding: 1rem; border-color: rgba(239, 68, 68, 0.3);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Top Player Asta</div>
+                        <div style="font-size: 1.2rem; font-weight: 800; color: #f87171; margin-top: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${topPlayer ? topPlayer.name : '-'}">
+                            ${topPlayer ? topPlayer.name : '-'} (${topPlayer ? topPlayer.cost : 0} CR)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SPESA GLOBALE PER RUOLO -->
+                <div class="glass-panel" style="padding: 1.2rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                        <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">📊 Spesa Complessiva per Reparto</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Distribuzione dei crediti su tutta l'asta</span>
+                    </div>
+                    
+                    <!-- Progress Bar Multi-color -->
+                    <div style="height: 18px; width: 100%; display: flex; border-radius: 9px; overflow: hidden; background: rgba(0,0,0,0.5); margin-bottom: 0.8rem;">
+                        <div style="width: ${pctP}%; background: var(--role-p);" title="Portieri: ${roleSpent.P} CR (${pctP}%)"></div>
+                        <div style="width: ${pctD}%; background: var(--role-d);" title="Difensori: ${roleSpent.D} CR (${pctD}%)"></div>
+                        <div style="width: ${pctC}%; background: var(--role-c);" title="Centrocampisti: ${roleSpent.C} CR (${pctC}%)"></div>
+                        <div style="width: ${pctA}%; background: var(--role-a);" title="Attaccanti: ${roleSpent.A} CR (${pctA}%)"></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
+                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); padding: 0.5rem; border-radius: 6px;">
+                            <div style="font-weight: 800; color: var(--role-p);">POR</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">${roleSpent.P} <span style="font-size: 0.75rem; color: var(--text-muted);">CR</span></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${pctP}% (${roleCount.P} giocatori)</div>
+                        </div>
+                        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.5rem; border-radius: 6px;">
+                            <div style="font-weight: 800; color: var(--role-d);">DIF</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">${roleSpent.D} <span style="font-size: 0.75rem; color: var(--text-muted);">CR</span></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${pctD}% (${roleCount.D} giocatori)</div>
+                        </div>
+                        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.5rem; border-radius: 6px;">
+                            <div style="font-weight: 800; color: var(--role-c);">CEN</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">${roleSpent.C} <span style="font-size: 0.75rem; color: var(--text-muted);">CR</span></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${pctC}% (${roleCount.C} giocatori)</div>
+                        </div>
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.5rem; border-radius: 6px;">
+                            <div style="font-weight: 800; color: var(--role-a);">ATT</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">${roleSpent.A} <span style="font-size: 0.75rem; color: var(--text-muted);">CR</span></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${pctA}% (${roleCount.A} giocatori)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONFRONTO STRATEGICO SQUADRE -->
+                <div class="glass-panel" style="padding: 1.2rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">🏆 Confronto Squadre & Strategia Budget</h3>
+                        <button onclick="exportStatsCSV()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 0.3rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
+                            📥 Esporta Riepilogo CSV
+                        </button>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted);">
+                                    <th style="padding: 0.6rem;">Squadra</th>
+                                    <th style="padding: 0.6rem; text-align: right;">Spesi</th>
+                                    <th style="padding: 0.6rem; text-align: right;">Residuo</th>
+                                    <th style="padding: 0.6rem; text-align: center;">Rosa</th>
+                                    <th style="padding: 0.6rem; text-align: right;">Media/G</th>
+                                    <th style="padding: 0.6rem; text-align: center; color: var(--role-p);">% POR</th>
+                                    <th style="padding: 0.6rem; text-align: center; color: var(--role-d);">% DIF</th>
+                                    <th style="padding: 0.6rem; text-align: center; color: var(--role-c);">% CEN</th>
+                                    <th style="padding: 0.6rem; text-align: center; color: var(--role-a);">% ATT</th>
+                                    <th style="padding: 0.6rem; text-align: center;">Titolarità Med.</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+            // Sort teams by spent desc
+            teamList.sort((a, b) => b.spent - a.spent);
+
+            teamList.forEach(t => {
+                const rem = 500 - t.spent;
+                const avgG = t.count ? (t.spent / t.count).toFixed(1) : 0;
+                const tPctP = t.spent ? ((t.rolesSpent.P / t.spent) * 100).toFixed(0) : 0;
+                const tPctD = t.spent ? ((t.rolesSpent.D / t.spent) * 100).toFixed(0) : 0;
+                const tPctC = t.spent ? ((t.rolesSpent.C / t.spent) * 100).toFixed(0) : 0;
+                const tPctA = t.spent ? ((t.rolesSpent.A / t.spent) * 100).toFixed(0) : 0;
+                const avgTit = t.count ? (t.titTotal / t.count).toFixed(1) : 0;
+
+                const isMe = t.name === 'La Mia Squadra';
+                html += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isMe ? 'background: rgba(56, 189, 248, 0.08); font-weight: 600;' : ''}">
+                        <td style="padding: 0.6rem; color: ${isMe ? '#38bdf8' : '#fff'};">${t.name}</td>
+                        <td style="padding: 0.6rem; text-align: right; color: var(--success); font-weight: bold;">${t.spent}</td>
+                        <td style="padding: 0.6rem; text-align: right; color: ${rem < 0 ? '#ef4444' : '#38bdf8'}; font-weight: bold;">${rem}</td>
+                        <td style="padding: 0.6rem; text-align: center;">${t.count}/25 <span style="font-size: 0.75rem; color: var(--text-muted);">(${t.roles.P}/${t.roles.D}/${t.roles.C}/${t.roles.A})</span></td>
+                        <td style="padding: 0.6rem; text-align: right;">${avgG}</td>
+                        <td style="padding: 0.6rem; text-align: center; color: var(--role-p);">${tPctP}%</td>
+                        <td style="padding: 0.6rem; text-align: center; color: var(--role-d);">${tPctD}%</td>
+                        <td style="padding: 0.6rem; text-align: center; color: var(--role-c);">${tPctC}%</td>
+                        <td style="padding: 0.6rem; text-align: center; color: var(--role-a);">${tPctA}%</td>
+                        <td style="padding: 0.6rem; text-align: center;">⭐ ${avgTit}/5</td>
+                    </tr>`;
+            });
+
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TOP 10 PIÙ PAGATI & BEST DEALS -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    
+                    <!-- TOP 10 ASSOLUTI -->
+                    <div class="glass-panel" style="padding: 1.2rem;">
+                        <h3 style="margin-top: 0; font-size: 1.1rem; color: #fff; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                            👑 Top 10 Acquisti Più Costosi
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem;">`;
+
+            sortedByCost.slice(0, 10).forEach((p, idx) => {
+                const badgeColor = p.role === 'P' ? 'var(--role-p)' : p.role === 'D' ? 'var(--role-d)' : p.role === 'C' ? 'var(--role-c)' : 'var(--role-a)';
+                const buyer = p.status === 'owned' ? 'La Mia Squadra' : (p.buyer || 'Altro');
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden;">
+                            <span style="font-weight: 800; color: var(--text-muted); width: 18px;">#${idx + 1}</span>
+                            <b style="color: ${badgeColor}; font-size: 0.8rem;">${p.role}</b>
+                            <span style="font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">(${p.team})</span>
+                        </div>
+                        <div style="text-align: right; flex-shrink: 0; margin-left: 0.5rem;">
+                            <b style="color: #38bdf8; font-size: 0.95rem;">${p.cost} CR</b>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">${buyer}</div>
+                        </div>
+                    </div>`;
+            });
+
+            html += `
+                        </div>
+                    </div>
+
+                    <!-- AFFARI RUBA-ASTA -->
+                    <div class="glass-panel" style="padding: 1.2rem;">
+                        <h3 style="margin-top: 0; font-size: 1.1rem; color: #10b981; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                            💎 I Migliori Affari (Risparmio vs Listone)
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem;">`;
+
+            if (bargains.length === 0) {
+                html += `<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 1.5rem;">Nessun giocatore acquistato a un prezzo inferiore a quello consigliato.</div>`;
+            } else {
+                bargains.forEach(p => {
+                    const badgeColor = p.role === 'P' ? 'var(--role-p)' : p.role === 'D' ? 'var(--role-d)' : p.role === 'C' ? 'var(--role-c)' : 'var(--role-a)';
+                    const buyer = p.status === 'owned' ? 'La Mia Squadra' : (p.buyer || 'Altro');
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden;">
+                                <b style="color: ${badgeColor}; font-size: 0.8rem;">${p.role}</b>
+                                <span style="font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">${p.team}</span>
+                            </div>
+                            <div style="text-align: right; flex-shrink: 0; margin-left: 0.5rem;">
+                                <span style="color: #fff; font-weight: bold;">${p.cost} CR</span>
+                                <span style="font-size: 0.75rem; color: #10b981; font-weight: bold; margin-left: 0.3rem;">(-${p.diff} vs ${p.rec})</span>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">${buyer}</div>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            html += `
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ASTE PIÙ INFUOCATE -->
+                <div class="glass-panel" style="padding: 1.2rem; margin-bottom: 1.5rem;">
+                    <h3 style="margin-top: 0; font-size: 1.1rem; color: #f87171; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                        🔥 Le Aste Più Infuocate (Maggior Sovrapprezzo Pagato)
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.6rem;">`;
+
+            if (overpays.length === 0) {
+                html += `<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 1.5rem; grid-column: 1/-1;">Nessun giocatore pagato sopra la quotazione consigliata.</div>`;
+            } else {
+                overpays.forEach(p => {
+                    const badgeColor = p.role === 'P' ? 'var(--role-p)' : p.role === 'D' ? 'var(--role-d)' : p.role === 'C' ? 'var(--role-c)' : 'var(--role-a)';
+                    const buyer = p.status === 'owned' ? 'La Mia Squadra' : (p.buyer || 'Altro');
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); padding: 0.5rem 0.7rem; border-radius: 6px; font-size: 0.85rem;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <b style="color: ${badgeColor}; font-size: 0.8rem;">${p.role}</b>
+                                    <span style="font-weight: bold; color: #fff;">${p.name}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">${p.team}</span>
+                                </div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;">Preso da: <b>${buyer}</b></div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: #fff; font-weight: 800; font-size: 1rem;">${p.cost} CR</div>
+                                <div style="color: #f87171; font-weight: bold; font-size: 0.75rem;">+${p.diff} vs ${p.rec}</div>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function exportStatsCSV() {
+            const assigned = players.filter(p => p.status !== 'available');
+            if (assigned.length === 0) {
+                alert("Nessun giocatore da esportare.");
+                return;
+            }
+
+            let csv = "ID,Nome,Ruolo,Squadra,Fascia,PrezzoConsigliato,PrezzoPagato,Acquirente,Titolarita,Affidabilita,Integrita\n";
+            assigned.forEach(p => {
+                const buyer = p.status === 'owned' ? 'La Mia Squadra' : (p.buyer || 'Altro');
+                const row = [
+                    p.id,
+                    `"${p.name.replace(/"/g, '""')}"`,
+                    p.role,
+                    `"${p.team}"`,
+                    `"${p.tier || ''}"`,
+                    p.price_str || 0,
+                    p.cost || 0,
+                    `"${buyer.replace(/"/g, '""')}"`,
+                    p.titolarita || 0,
+                    p.affidabilita || 0,
+                    p.integrita || 0
+                ];
+                csv += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fanta_asta_report_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Close modals on backdrop click or ESC
+        window.addEventListener('click', (e) => {
+            const backupModal = document.getElementById('backupModal');
+            const statsModal = document.getElementById('statsModal');
+            const recapModal = document.getElementById('recapModal');
+            if (e.target === backupModal) closeBackupModal();
+            if (e.target === statsModal) closeStatsModal();
+            if (e.target === recapModal) closeRecapModal();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeBackupModal();
+                closeStatsModal();
+                closeRecapModal();
+                closeActionModal();
+            }
+        });
 
         initializeApp();
     </script>
@@ -9211,6 +9732,77 @@
                 style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; flex-grow: 1; overflow-y: auto; padding-right: 5px;">
                 <!-- Filled by JS -->
             </div>
+        </div>
+    </div>
+
+    <!-- Statistiche Avanzate Modal -->
+    <div id="statsModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 1.5rem;">
+        <div class="glass-panel"
+            style="width: 100%; max-width: 1050px; max-height: 92vh; overflow-y: auto; background: var(--bg-color); border: 1px solid var(--panel-border); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; padding: 1.5rem;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem; flex-shrink: 0;">
+                <h2 style="margin: 0; font-size: 1.5rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">📈 Statistiche & Analisi Asta</h2>
+                <button onclick="closeStatsModal()"
+                    style="background: transparent; border: none; color: #fff; font-size: 2rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            <div id="statsContent" style="flex-grow: 1; overflow-y: auto;">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup & Restore Modal -->
+    <div id="backupModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 1.5rem;">
+        <div class="glass-panel"
+            style="width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; background: var(--panel-bg); border-radius: 16px; padding: 1.5rem; border: 1px solid var(--panel-border); box-shadow: 0 12px 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 1.2rem;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;">
+                <h2 style="margin: 0; font-size: 1.4rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">💾 Gestione Database & Backup</h2>
+                <button onclick="closeBackupModal()" style="background: transparent; border: none; color: #fff; font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Export Section -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.2rem;">
+                <div style="font-weight: bold; color: var(--accent); font-size: 1.1rem; margin-bottom: 0.4rem;">📤 Esporta Database (dall'iPad al PC)</div>
+                <div id="backupCountInfo" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.8rem;">Caricamento stato...</div>
+                
+                <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem; align-items: center;">
+                    <button onclick="downloadBackupJson()" style="background: #0284c7; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+                        📥 Scarica File JSON
+                    </button>
+                    <button onclick="copyBackupJson()" style="background: #059669; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+                        📋 Copia JSON negli Appunti
+                    </button>
+                    <span id="backupCopyFeedback" style="display: none; font-size: 0.85rem; font-weight: bold; color: #34d399;">✅ Copiato!</span>
+                </div>
+
+                <details style="margin-top: 0.5rem;">
+                    <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.8rem;">Visualizza / Copia testo JSON manualmente</summary>
+                    <textarea id="exportJsonTextarea" readonly style="width: 100%; height: 140px; margin-top: 0.5rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #93c5fd; font-family: monospace; font-size: 0.75rem; padding: 0.5rem; resize: vertical; box-sizing: border-box;"></textarea>
+                </details>
+            </div>
+
+            <!-- Import Section -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.2rem;">
+                <div style="font-weight: bold; color: #38bdf8; font-size: 1.1rem; margin-bottom: 0.4rem;">📥 Importa Database (su questo dispositivo)</div>
+                <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.8rem;">Seleziona il file JSON scaricato dall'iPad o incolla il testo JSON per caricare tutti i dati dell'asta.</div>
+
+                <div style="margin-bottom: 0.8rem;">
+                    <input type="file" id="backupFileInput" accept=".json" onchange="handleFileImport(event)" style="font-size: 0.85rem; color: var(--text-muted); background: rgba(0,0,0,0.3); border-radius: 6px; padding: 0.4rem; width: 100%; box-sizing: border-box;">
+                </div>
+
+                <textarea id="importJsonTextarea" placeholder="Oppure incolla qui il codice JSON..." style="width: 100%; height: 110px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f3f4f6; font-family: monospace; font-size: 0.75rem; padding: 0.5rem; resize: vertical; box-sizing: border-box; margin-bottom: 0.8rem;"></textarea>
+
+                <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
+                    <button onclick="applyImportData()" style="background: #d97706; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;">
+                        🚀 Ripristina & Aggiorna Dati
+                    </button>
+                    <span id="backupImportFeedback" style="display: none; font-size: 0.85rem; font-weight: bold;"></span>
+                </div>
+            </div>
+
         </div>
     </div>
 
