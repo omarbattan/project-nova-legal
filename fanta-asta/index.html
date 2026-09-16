@@ -14262,15 +14262,16 @@
                 teams[tName].intTotal += (p.integrita || 0);
                 teams[tName].players.push(p);
 
-                if (p.stats) {
-                    teams[tName].goals += (p.stats.gf || 0);
-                    teams[tName].assists += (p.stats.ass || 0);
+                const pStatsObj = getPlayerStats(p);
+                if (pStatsObj) {
+                    teams[tName].goals += (pStatsObj.gf || 0);
+                    teams[tName].assists += (pStatsObj.ass || 0);
                     if (p.role === 'P') {
-                        teams[tName].gkConceded += (p.stats.gs || 0);
+                        teams[tName].gkConceded += (pStatsObj.gs || 0);
                     }
-                    if (p.stats.pv > 0) {
+                    if (pStatsObj.pv > 0) {
                         teams[tName].activePlayers++;
-                        teams[tName].fmSum += p.stats.fm;
+                        teams[tName].fmSum += pStatsObj.fm;
                     }
                 }
             });
@@ -14380,22 +14381,7 @@
             });
 
             let html = `
-                <!-- Intro Banner -->
-                <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(139, 92, 246, 0.15)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                        <div>
-                            <h3 style="margin: 0; color: #fff; font-size: 1.2rem; display: flex; align-items: center; gap: 0.4rem;">
-                                <span>🔮</span> Power Ranking & Simulazione Gare 1-3
-                            </h3>
-                            <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: #cbd5e1;">
-                                In vista della <b>Giornata 4</b> di domani, ecco la simulazione di chi parte più avvantaggiato in base al rendimento reale dei giocatori schierati nelle prime gare di Serie A.
-                            </p>
-                        </div>
-                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; color: #38bdf8; font-weight: bold;">
-                            Statistiche in tempo reale!
-                        </div>
-                    </div>
-                </div>
+                
 
                 <!-- KPI Grid -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
