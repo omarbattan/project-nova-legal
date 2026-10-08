@@ -1,26 +1,461 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprint Starter - Support</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 40px 20px; color: #333; text-align: center; }
-        h1 { color: #222; }
-        .email-box { background: #f4f4f5; padding: 20px; border-radius: 12px; margin-top: 30px; display: inline-block; }
-        a { color: #007aff; text-decoration: none; font-weight: 500; }
-        a:hover { text-decoration: underline; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint Starter Support & Customer Care</title>
+  <meta name="description" content="Official support, FAQs, and contact information for Sprint Starter on iOS.">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+      --card-bg: #ffffff;
+      --card-border: rgba(226, 232, 240, 0.85);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent: #ea580c;
+      --accent-hover: #c2410c;
+      --badge-bg: #f1f5f9;
+      --badge-text: #334155;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+      --divider: #e2e8f0;
+      --faq-bg: #f8fafc;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-gradient: linear-gradient(180deg, #090d16 0%, #0f172a 100%);
+        --card-bg: #141c2e;
+        --card-border: rgba(255, 255, 255, 0.08);
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --badge-bg: rgba(255, 255, 255, 0.08);
+        --badge-text: #cbd5e1;
+        --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        --hover-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+        --divider: rgba(255, 255, 255, 0.08);
+        --faq-bg: rgba(255, 255, 255, 0.03);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 20px 60px;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .icon-wrapper {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 18px;
+      background: linear-gradient(135deg, #c2410c, #ea580c);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 15.5px;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .contact-card {
+      border-left: 4px solid var(--accent);
+    }
+
+    .card-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-desc {
+      font-size: 14.5px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.55;
+    }
+
+    .email-action-box {
+      background: var(--faq-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    @media (min-width: 500px) {
+      .email-action-box {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .email-text {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      font-size: 13.5px;
+      font-weight: 600;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.18s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--card-border);
+    }
+
+    .sla-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--divider);
+      padding: 18px 0;
+    }
+
+    .faq-item:first-of-type {
+      padding-top: 4px;
+    }
+
+    .faq-item:last-of-type {
+      border-bottom: none;
+      padding-bottom: 4px;
+    }
+
+    .faq-question {
+      font-size: 15.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .faq-q-tag {
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .faq-answer {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      padding-left: 20px;
+    }
+
+    .quick-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .link-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px 18px;
+      text-decoration: none;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: var(--card-shadow);
+    }
+
+    .link-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--hover-shadow);
+    }
+
+    .link-card span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .link-arrow {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 40px;
+      line-height: 1.8;
+    }
+
+    footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-    <h1>Sprint Starter Support</h1>
-    <p>Need help with the app? We are here for you.</p>
-    
-    <div class="email-box">
-        <p>If you have any questions, feedback, or issues, please contact us at:</p>
-        <p><a href="mailto:project-nova-apps@proton.me">project-nova-apps@proton.me</a></p>
-    </div>
-    
-    <p style="margin-top: 40px; font-size: 14px; color: #666;">We typically respond within 24-48 hours.</p>
+  <div class="container">
+    <header class="header">
+      <div class="icon-wrapper">⚡️</div>
+      <div class="badge"><span class="badge-dot"></span>Athletics & Reaction Timer</div>
+      <h1>Sprint Starter Support</h1>
+      <p class="subtitle">Precision starting gun audio cues, reaction timers, and cadence interval drills for sprinters and track athletes.</p>
+    </header>
+
+    <main>
+      <!-- Contact Card -->
+      <section class="card contact-card">
+        <h2 class="card-title"><span>📬</span> Contact Support</h2>
+        <p class="card-desc">Have questions, feedback, or need help with Sprint Starter? Our team is dedicated to providing swift assistance.</p>
+
+        <div class="email-action-box">
+          <span class="email-text" id="supportEmail">project-nova-apps@proton.me</span>
+          <div class="btn-group">
+            <a href="mailto:project-nova-apps@proton.me?subject=Sprint Starter%20Support%20Request" class="btn btn-primary">
+              <span>✉️</span> Email Us
+            </a>
+            <button class="btn btn-secondary" onclick="copyEmail()">
+              <span>📋</span> Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="sla-banner">
+          <span>⚡️ Typical response:</span> within 24-48 business hours. Including your iOS version and device model helps us assist you faster.
+        </div>
+      </section>
+
+      <!-- Frequently Asked Questions -->
+      <section class="card">
+        <h2 class="card-title"><span>💡</span> Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+          <h3 class="faq-question"><span class="faq-q-tag">Q:</span> How do the starting gun audio cues work?</h3>
+          <p class="faq-answer">Sprint Starter delivers official athletics cadence: 'On your marks', 'Set', followed by the start signal. You can randomize the 'Set to Go' delay to simulate authentic race conditions and prevent anticipating the gun.</p>
+        </div>
+
+        <div class="faq-item">
+          <h3 class="faq-question"><span class="faq-q-tag">Q:</span> Can I use external Bluetooth speakers or headphones?</h3>
+          <p class="faq-answer">Yes. Sprint Starter routes audio through any connected device. Ensure your iPhone ringer is unmuted and the volume is turned up for the best experience on the track.</p>
+        </div>
+
+        <div class="faq-item">
+          <h3 class="faq-question"><span class="faq-q-tag">Q:</span> How do I restore my PRO purchase?</h3>
+          <p class="faq-answer">Tap the Settings icon inside Sprint Starter and select 'Restore Purchases'.</p>
+        </div>
+      </section>
+
+      <!-- Quick Legal & Navigation Links -->
+      <div class="quick-links">
+        <a href="../privacy-policy/index.html" class="link-card">
+          <span><span>🔒</span> Privacy Policy</span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a href="../terms-of-use/index.html" class="link-card">
+          <span><span>📄</span> Terms of Use</span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a href="../../index.html" class="link-card">
+          <span><span>🌐</span> All Apps</span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Project Nova & Omar Battan. All rights reserved.</p>
+      <p><a href="../../index.html">Project Nova Legal & Support Hub</a></p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast">✓ Support email copied to clipboard!</div>
+
+  <script>
+    function copyEmail() {
+      const email = document.getElementById('supportEmail').innerText;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(email).then(() => {
+          showToast();
+        }).catch(() => {
+          promptFallback(email);
+        });
+      } else {
+        promptFallback(email);
+      }
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    function promptFallback(email) {
+      prompt('Support Email:', email);
+    }
+  </script>
 </body>
 </html>
